@@ -1,0 +1,59 @@
+openapi: 3.0.1
+info:
+  title: WebSocket API
+  version: 1.0.0
+  description: |
+    This is a WebSocket API with the following routes:
+      - `$connect`: Establish a connection.
+      - `$disconnect`: Disconnect from the WebSocket.
+      - `$default`: Handle unmatched routes.
+      - `sendMessage`: Send a message.
+paths:
+  /$connect:
+    post:
+      summary: Establish WebSocket connection
+      description: Triggered when a client connects to the WebSocket API.
+      responses:
+        "200":
+          description: Connection successfully established.
+        "101":
+          description: Switching Protocols - The client is switching protocols as requested by the server.
+        "400":
+          description: Bad request.
+  /$disconnect:
+    delete:
+      summary: Disconnect WebSocket
+      description: Triggered when a client disconnects from the WebSocket API.
+      responses:
+        "200":
+          description: Disconnection successfully handled.
+  /$default:
+    post:
+      summary: Handle unmatched routes
+      description: Default route for handling unmatched WebSocket requests.
+      responses:
+        "404":
+          description: Route not found.
+  /sendMessage:
+    post:
+      summary: Send a message
+      description: Sends a message over the WebSocket API.
+      requestBody:
+        description: Message payload sent by the client.
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                action:
+                  type: string
+                  example: "sendMessage"
+                data:
+                  type: string
+                  example: "Hello, WebSocket!"
+      responses:
+        "200":
+          description: Message successfully sent.
+        "400":
+          description: Invalid message payload.
