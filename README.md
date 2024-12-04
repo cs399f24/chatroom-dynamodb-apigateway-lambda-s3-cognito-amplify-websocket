@@ -1,6 +1,6 @@
 # Overview
 
-![Architecture Diagram](Version3_awsArchitecture.png)
+![Architecture Diagram](ArchitectureDiagramv4.png)
 
 # AWS Chatroom with Dynamodb, apigateway, lambda, s3, cognito, websocket
 
