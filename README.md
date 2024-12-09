@@ -57,7 +57,7 @@ The deployment process requires:
 
 ### 1. Infrastructure Deployment
 
-The CloudFormation template creates all required AWS resources:
+The CloudFormation template creates all required AWS resources, including the website hosting infrastructure:
 
 ```bash
 aws cloudformation create-stack \
@@ -67,28 +67,21 @@ aws cloudformation create-stack \
   --parameters ParameterKey=DomainName,ParameterValue=your-domain.com
 ```
 
+The template automatically provisions:
+- Cognito User Pool for authentication
+- API Gateway endpoints for REST and WebSocket APIs
+- DynamoDB tables for message and connection storage
+- S3 bucket configured for website hosting
+- Lambda functions for application logic
+- Required IAM roles and policies
+
 ### 2. Lambda Function Configuration
 
-The Lambda functions are provided in the repository and will be automatically deployed by CloudFormation. No additional packaging or uploading is required. The functions include:
+The Lambda functions are provided in the repository and are automatically deployed by CloudFormation. No additional packaging or uploading is required. The functions include:
 
 - Token Exchange: Handles authentication token management
 - Message Management: Processes message storage and retrieval
 - WebSocket Handlers: Manages real-time connections and message broadcasting
-
-### 3. Website Deployment
-
-Deploy the provided website assets to the created S3 bucket:
-
-```bash
-# Get the website bucket name from CloudFormation outputs
-WEBSITE_BUCKET=$(aws cloudformation describe-stacks \
-  --stack-name chatroom-app \
-  --query 'Stacks[0].Outputs[?OutputKey==`WebsiteBucketName`].OutputValue' \
-  --output text)
-
-# Deploy website content
-aws s3 sync website/ s3://$WEBSITE_BUCKET/
-```
 
 ## Configuration Details
 
@@ -118,3 +111,4 @@ The application implements several security measures:
 - CORS configuration for API endpoints
 - Encrypted data storage
 - Least-privilege IAM roles
+- HTTPS enforcement for S3 website access
