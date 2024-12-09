@@ -1,219 +1,120 @@
-# AWS Serverless Chatroom Infrastructure
+# Serverless Chatroom Infrastructure
 
 ## Architecture Overview
 ![Architecture Diagram](ArchitectureDiagramv4.png)
 
-This serverless chat application demonstrates a modern cloud architecture using various AWS services. The infrastructure is defined as code using AWS CloudFormation, enabling consistent and repeatable deployments.
+This repository provides a complete serverless chatroom application infrastructure using AWS services. It includes all necessary infrastructure-as-code templates and implementation code for immediate deployment. The architecture diagram above illustrates how the various AWS services interact to deliver a scalable, real-time chat solution.
 
-## Core Components
+Our implementation leverages several AWS services:
+- Amazon Cognito manages user authentication and authorization
+- API Gateway provides both REST and WebSocket endpoints
+- AWS Lambda functions process authentication and message handling
+- Amazon DynamoDB stores chat messages and connection information
+- Amazon S3 hosts the static website content
 
-### Amazon Cognito Authentication
-The application implements secure user authentication through Amazon Cognito, providing:
-
-- Email-based user authentication
-- Integration with Google as an external identity provider
-- JSON Web Token (JWT) issuance for API security
-- Comprehensive user management capabilities
-- Secure token handling with separate ID, Access, and Refresh tokens
-
-### WebSocket API Integration
+## WebSocket Integration
 ![Web Socket API Documentation](WebSocketAPI.png)
 
-The WebSocket API enables real-time communication features:
+The WebSocket API implementation enables real-time communication through:
 - Persistent connections for immediate message delivery
 - Efficient broadcast capabilities to connected clients
 - Connection management through DynamoDB
 - Secure message routing and delivery
 
-## Deployment Instructions
+## Repository Contents
 
-### Prerequisites
-
-1. AWS Account with administrative access
-2. AWS CLI installed and configured
-3. S3 bucket for Lambda function storage
-4. Node.js and Python installed locally
-5. Basic understanding of AWS services and CloudFormation
-
-### Initial Setup
-
-1. Clone the Repository
-```bash
-git clone https://github.com/your-username/chatroom-infrastructure.git
-cd chatroom-infrastructure
+```
+chatroom-infrastructure/
+├── cloudformation/
+│   └── template.yaml       # CloudFormation infrastructure template
+├── lambda/
+│   ├── token-exchange/    # Token exchange function implementation
+│   │   ├── index.js       # Main function code
+│   │   └── package.json   # Dependencies
+│   ├── get-messages/      # Message retrieval function
+│   │   └── index.py       # Message handling implementation
+│   ├── store-message/     # Message storage function
+│   │   └── index.py       # Storage implementation
+│   └── websocket/         # WebSocket connection handlers
+│       ├── connect.js     # Connection management
+│       ├── disconnect.js  # Disconnection handling
+│       └── message.js     # Message broadcasting
+├── website/               # Static website files
+│   ├── index.html        # Main application page
+│   ├── css/              # Styling
+│   └── js/               # Frontend implementation
+└── README.md
 ```
 
-2. Create Configuration File
-Create `params.json` with your specific settings:
-```json
-[
-  {
-    "ParameterKey": "Environment",
-    "ParameterValue": "dev"
-  },
-  {
-    "ParameterKey": "ProjectName",
-    "ParameterValue": "my-chatroom"
-  },
-  {
-    "ParameterKey": "DomainName",
-    "ParameterValue": "your-domain.com"
-  }
-]
-```
+## Prerequisites
 
-### Lambda Function Preparation
+The deployment process requires:
+- An AWS Account with administrator access
+- AWS CLI installed and configured
+- A domain name for the application (optional)
 
-1. Token Exchange Function Setup
-```bash
-mkdir -p lambda/token-exchange
-cd lambda/token-exchange
-npm init -y
-# Add your token exchange implementation
-cat << EOF > index.js
-exports.handler = async (event) => {
-    // Token exchange implementation
-    // Refer to provided example code
-};
-EOF
-zip -r ../../token-exchange.zip .
-```
+## Deployment Process
 
-2. Message Handler Function Setup
-```bash
-mkdir -p lambda/get-messages
-cd lambda/get-messages
-# Add message handling implementation
-cat << EOF > getChatMessagesPython.py
-def lambda_handler(event, context):
-    # Message handling implementation
-    # Refer to provided example code
-    pass
-EOF
-zip -r ../../get-messages.zip .
-```
+### 1. Infrastructure Deployment
 
-### Infrastructure Deployment
+The CloudFormation template creates all required AWS resources:
 
-1. Create Lambda Code Bucket
-```bash
-export BUCKET_NAME="my-chatroom-lambda-dev"
-aws s3 mb s3://${BUCKET_NAME}
-aws s3 cp token-exchange.zip s3://${BUCKET_NAME}/
-aws s3 cp get-messages.zip s3://${BUCKET_NAME}/
-```
-
-2. Deploy CloudFormation Stack
 ```bash
 aws cloudformation create-stack \
-  --stack-name my-chatroom-dev \
-  --template-body file://template.yaml \
-  --parameters file://params.json \
-  --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM
+  --stack-name chatroom-app \
+  --template-body file://cloudformation/template.yaml \
+  --capabilities CAPABILITY_IAM \
+  --parameters ParameterKey=DomainName,ParameterValue=your-domain.com
 ```
 
-3. Monitor Deployment
+### 2. Lambda Function Configuration
+
+The Lambda functions are provided in the repository and will be automatically deployed by CloudFormation. No additional packaging or uploading is required. The functions include:
+
+- Token Exchange: Handles authentication token management
+- Message Management: Processes message storage and retrieval
+- WebSocket Handlers: Manages real-time connections and message broadcasting
+
+### 3. Website Deployment
+
+Deploy the provided website assets to the created S3 bucket:
+
 ```bash
-aws cloudformation describe-stacks \
-  --stack-name my-chatroom-dev \
-  --query 'Stacks[0].Outputs'
+# Get the website bucket name from CloudFormation outputs
+WEBSITE_BUCKET=$(aws cloudformation describe-stacks \
+  --stack-name chatroom-app \
+  --query 'Stacks[0].Outputs[?OutputKey==`WebsiteBucketName`].OutputValue' \
+  --output text)
+
+# Deploy website content
+aws s3 sync website/ s3://$WEBSITE_BUCKET/
 ```
 
-## Post-Deployment Configuration
+## Configuration Details
 
-### Cognito Setup
+After deployment, CloudFormation provides important configuration values through stack outputs:
 
-1. Configure User Pool
-   - Access AWS Cognito Console
-   - Locate your created User Pool
-   - Configure authentication providers if using Google integration
-   - Set up email verification settings
+- Cognito User Pool ID for authentication
+- API Gateway endpoints for REST and WebSocket connections
+- S3 website URL for application access
+- Lambda function configurations
 
-2. Client Application Settings
-   - Note the Client ID and Client Secret
-   - Configure allowed OAuth flows
-   - Set callback and logout URLs
+## Implementation Features
 
-### WebSocket API Configuration
+The included Lambda functions provide:
 
-1. Enable API Gateway WebSocket Features
-   - Configure route selection expressions
-   - Set up integration responses
-   - Enable CloudWatch logging
+- Secure token exchange with Cognito integration
+- Message persistence in DynamoDB
+- Real-time message broadcasting via WebSocket
+- Connection state management
+- Error handling and logging
 
-2. Connection Management
-   - Verify DynamoDB table creation
-   - Test connection handling
-   - Configure message routing
+## Security Implementation
 
-## Security Considerations
+The application implements several security measures:
 
-1. Authentication and Authorization
-   - Implement proper token validation
-   - Use appropriate CORS settings
-   - Regular secret rotation
-   - Implement least privilege access
-
-2. Data Protection
-   - Enable encryption at rest
-   - Secure transport layer encryption
-   - Implement message validation
-   - Regular security audits
-
-## Monitoring and Maintenance
-
-1. CloudWatch Integration
-   - Set up metric alarms
-   - Configure log retention
-   - Monitor API usage
-   - Track connection statistics
-
-2. Performance Optimization
-   - Adjust DynamoDB capacity
-   - Monitor Lambda execution times
-   - Optimize WebSocket connections
-   - Regular performance testing
-
-## Cost Management
-
-1. Resource Optimization
-   - Use appropriate DynamoDB capacity modes
-   - Monitor API Gateway usage
-   - Optimize Lambda memory allocation
-   - Regular cost analysis
-
-2. Cost Control
-   - Set up AWS Budgets
-   - Monitor usage patterns
-   - Implement auto-scaling
-   - Regular cost reviews
-
-## Troubleshooting Guide
-
-1. Common Issues
-   - Connection handling errors
-   - Token validation failures
-   - DynamoDB capacity issues
-   - Lambda timeout problems
-
-2. Debug Procedures
-   - Check CloudWatch logs
-   - Verify IAM permissions
-   - Test API endpoints
-   - Validate WebSocket connections
-
-## Clean Up Resources
-
-Remove all created resources when no longer needed:
-```bash
-aws cloudformation delete-stack --stack-name my-chatroom-dev
-```
-
-## Additional Resources
-
-- [AWS Cognito Documentation](https://docs.aws.amazon.com/cognito/)
-- [API Gateway WebSocket API Documentation](https://docs.aws.amazon.com/apigateway/)
-- [DynamoDB Developer Guide](https://docs.aws.amazon.com/amazondynamodb/)
-- [Lambda Developer Guide](https://docs.aws.amazon.com/lambda/)
-
-For additional support or to report issues, please open a GitHub issue in the repository.
+- Token-based authentication using Cognito
+- Secure WebSocket connections
+- CORS configuration for API endpoints
+- Encrypted data storage
+- Least-privilege IAM roles
