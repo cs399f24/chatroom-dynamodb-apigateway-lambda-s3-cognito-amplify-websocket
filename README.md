@@ -47,62 +47,114 @@ The deployment process requires:
 - AWS CLI installed and configured
 - A domain name for the application (optional)
 
-## Deployment Process
+## Setup
 
-### 1. Infrastructure Deployment
+1. Clone the repository:
+   ```bash
+   git clone <repository-url>
+   cd chatroom-infrastructure
+   ```
 
-The CloudFormation template creates all required AWS resources, including the website hosting infrastructure:
+2. Install dependencies:
+   ```bash
+   # Install AWS CLI if not already installed
+   curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+   unzip awscliv2.zip
+   sudo ./aws/install
 
-```bash
-aws cloudformation create-stack \
-  --stack-name chatroom-app \
-  --template-body file://cloudformation/template.yaml \
-  --capabilities CAPABILITY_IAM \
-  --parameters ParameterKey=DomainName,ParameterValue=your-domain.com
-```
+   # Configure AWS CLI
+   aws configure
+   ```
 
-The template automatically provisions:
-- Cognito User Pool for authentication
-- API Gateway endpoints for REST and WebSocket APIs
-- DynamoDB tables for message and connection storage
-- S3 bucket configured for website hosting
-- Lambda functions for application logic
-- Required IAM roles and policies
+## Deployment
 
-### 2. Lambda Function Configuration
+1. Deploy AWS infrastructure:
+   ```bash
+   aws cloudformation create-stack \
+     --stack-name chatroom-app \
+     --template-body file://cloudformation/template.yaml \
+     --capabilities CAPABILITY_IAM
+   ```
 
-The Lambda functions are provided in the repository and are automatically deployed by CloudFormation. No additional packaging or uploading is required. The functions include:
+2. Get stack outputs and configure application:
+   ```bash
+   # Get CloudFormation outputs
+   aws cloudformation describe-stacks \
+     --stack-name chatroom-app \
+     --query 'Stacks[0].Outputs' \
+     --output json > stack-outputs.json
+   ```
 
-- Token Exchange: Handles authentication token management
-- Message Management: Processes message storage and retrieval
-- WebSocket Handlers: Manages real-time user connections and message broadcasting
+3. Update the frontend main.js with CloudFormation outputs:
+   ```bash
+   # Get required values
+   USER_POOL_ID=$(aws cloudformation describe-stacks --stack-name chatroom-app --query 'Stacks[0].Outputs[?OutputKey==`UserPoolId`].OutputValue' --output text)
+   CLIENT_ID=$(aws cloudformation describe-stacks --stack-name chatroom-app --query 'Stacks[0].Outputs[?OutputKey==`ClientId`].OutputValue' --output text)
+   COGNITO_DOMAIN=$(aws cloudformation describe-stacks --stack-name chatroom-app --query 'Stacks[0].Outputs[?OutputKey==`UserPoolDomainName`].OutputValue' --output text)
+   API_ENDPOINT=$(aws cloudformation describe-stacks --stack-name chatroom-app --query 'Stacks[0].Outputs[?OutputKey==`WebApiEndpoint`].OutputValue' --output text)
+   
+   # Replace placeholders in main.js
+   sed -i "s|YOUR_USER_POOL_ID|$USER_POOL_ID|g" website/js/main.js
+   sed -i "s|YOUR_CLIENT_ID|$CLIENT_ID|g" website/js/main.js
+   sed -i "s|YOUR_COGNITO_DOMAIN|$COGNITO_DOMAIN|g" website/js/main.js
+   sed -i "s|YOUR_STORE_MESSAGE_ENDPOINT|$API_ENDPOINT/messages|g" website/js/main.js
+   sed -i "s|YOUR_GET_MESSAGES_ENDPOINT|$API_ENDPOINT/messages|g" website/js/main.js
+   ```
 
-## Configuration Details
+4. Update Lambda functions with environment variables:
+   ```bash
+   # Get website domain
+   WEBSITE_URL=$(aws cloudformation describe-stacks --stack-name chatroom-app --query 'Stacks[0].Outputs[?OutputKey==`WebsiteURL`].OutputValue' --output text)
+   TABLE_NAME=$(aws cloudformation describe-stacks --stack-name chatroom-app --query 'Stacks[0].Outputs[?OutputKey==`MessagesTableName`].OutputValue' --output text)
+   
+   # Update Lambda functions
+   aws lambda update-function-configuration \
+     --function-name chatroom-app-getChatMessages \
+     --environment "Variables={ALLOWED_ORIGIN=$WEBSITE_URL,TABLE_NAME=$TABLE_NAME}"
+   
+   aws lambda update-function-configuration \
+     --function-name chatroom-app-storeMessage \
+     --environment "Variables={ALLOWED_ORIGIN=$WEBSITE_URL,TABLE_NAME=$TABLE_NAME}"
+   ```
 
-After deployment, CloudFormation provides important configuration values through stack outputs:
+5. Deploy Lambda functions:
+   ```bash
+   cd lambda
+   zip -r ../getChatMessages.zip getChatMessages/
+   zip -r ../store-message.zip store-message/
+   
+   aws s3 cp getChatMessages.zip s3://your-lambda-bucket/
+   aws s3 cp store-message.zip s3://your-lambda-bucket/
+   ```
 
-- Cognito User Pool ID for authentication
-- API Gateway endpoints for REST and WebSocket connections
-- S3 website URL for application access
-- Lambda function configurations
+6. Deploy frontend:
+   ```bash
+   cd website
+   aws s3 sync . s3://your-bucket-name/
+   ```
 
-## Implementation Features
+## Testing
 
-The included Lambda functions provide:
+1. Get your deployed website URL:
+   ```bash
+   aws cloudformation describe-stacks \
+     --stack-name chatroom-app \
+     --query 'Stacks[0].Outputs[?OutputKey==`WebsiteURL`].OutputValue' \
+     --output text
+   ```
 
-- Secure token exchange with Cognito integration
-- Message persistence in DynamoDB
-- Real-time message broadcasting via WebSocket
-- Connection state management
-- Error handling and logging
+2. Open the URL in your browser
+3. Create an account and test the chat functionality
 
-## Security Implementation
+## Cleanup
 
-The application implements several security measures:
+1. Empty S3 buckets:
+   ```bash
+   aws s3 rm s3://your-bucket-name --recursive
+   aws s3 rm s3://your-lambda-bucket --recursive
+   ```
 
-- Token-based authentication using Cognito
-- Secure WebSocket connections
-- CORS configuration for API endpoints
-- Encrypted data storage
-- Least-privilege IAM roles
-- HTTPS enforcement for S3 website access
+2. Delete CloudFormation stack:
+   ```bash
+   aws cloudformation delete-stack --stack-name chatroom-app
+   ```
