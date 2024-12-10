@@ -9,6 +9,12 @@ Our implementation leverages several AWS services:
 - Amazon DynamoDB stores chat messages and connection information
 - Amazon S3 hosts the static website content
 
+# Contributors
+
+- **Fernando Peralta Castro** - [fpera0248](https://github.com/fpera0248)
+- **Davin Glynn** - [dg25moravian](https://github.com/dg25moravian)
+- **David Marrero** - [badlydrawnface](https://github.com/badlydrawnface)
+
 # Architecture Diagram
 ![Architecture Diagram](ArchitectureDiagramv4.png)
 
