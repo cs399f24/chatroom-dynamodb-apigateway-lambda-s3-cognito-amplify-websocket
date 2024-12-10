@@ -1,0 +1,68 @@
+import json
+import boto3
+import os
+from datetime import datetime
+
+dynamodb = boto3.resource('dynamodb')
+table = dynamodb.Table('ChatMessages')
+
+def lambda_handler(event, context):
+    print('Event received:', json.dumps(event, indent=2))
+    
+    headers = {
+        'Access-Control-Allow-Origin': os.environ['ALLOWED_ORIGIN'],  # Configure via Lambda environment variables
+        'Access-Control-Allow-Methods': 'GET,OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type,Authorization',
+        'Access-Control-Allow-Credentials': 'true',
+        'Content-Type': 'application/json'
+    }
+
+    if event.get('httpMethod') == 'OPTIONS':
+        return {
+            'statusCode': 200,
+            'headers': headers,
+            'body': ''
+        }
+
+    try:
+        # Extract user information from the authorizer context
+        authorizer = event.get('requestContext', {}).get('authorizer', {})
+        claims = authorizer.get('claims', {})
+        username = claims.get('cognito:username', 'Unknown')
+
+        print(f"Authenticated user: {username}")
+
+        # Fetch messages from DynamoDB (limit to last 100 messages)
+        response = table.scan(
+            Limit=100
+        )
+
+        messages = response.get('Items', [])
+        print(f"Retrieved {len(messages)} messages from DynamoDB.")
+
+        # Sort messages by timestamp (newest first)
+        sorted_messages = sorted(
+            messages,
+            key=lambda x: x['Timestamp'],
+            reverse=True
+        )
+
+        return {
+            'statusCode': 200,
+            'headers': headers,
+            'body': json.dumps({
+                'messages': sorted_messages,
+                'count': len(sorted_messages)
+            })
+        }
+
+    except Exception as e:
+        print(f"Error fetching messages: {str(e)}")
+        return {
+            'statusCode': 500,
+            'headers': headers,
+            'body': json.dumps({
+                'error': 'Failed to fetch messages',
+                'details': str(e)
+            })
+        }
