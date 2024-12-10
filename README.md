@@ -21,7 +21,7 @@ Our implementation leverages several AWS services:
 The WebSocket API implementation enables real-time communication through:
 - Persistent connections for immediate message delivery
 - Efficient broadcast capabilities to connected clients
-- Connection management through DynamoDB
+- Session management through DynamoDB
 - Secure message routing and delivery
 
 ## Repository Contents
@@ -84,7 +84,7 @@ The Lambda functions are provided in the repository and are automatically deploy
 
 - Token Exchange: Handles authentication token management
 - Message Management: Processes message storage and retrieval
-- WebSocket Handlers: Manages real-time connections and message broadcasting
+- WebSocket Handlers: Manages real-time user connections and message broadcasting
 
 ## Configuration Details
 
