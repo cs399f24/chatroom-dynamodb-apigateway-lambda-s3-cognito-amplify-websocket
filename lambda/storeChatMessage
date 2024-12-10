@@ -1,0 +1,70 @@
+import json
+import boto3
+from datetime import datetime
+import os
+
+dynamodb = boto3.resource('dynamodb')
+table = dynamodb.Table(os.environ['TABLE_NAME'])
+
+def lambda_handler(event, context):
+    print('Event received:', json.dumps(event))
+    
+    headers = {
+        'Access-Control-Allow-Origin': os.environ['ALLOWED_ORIGIN'],
+        'Access-Control-Allow-Methods': 'POST,OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type,Authorization',
+        'Access-Control-Allow-Credentials': 'true',
+        'Content-Type': 'application/json'
+    }
+    
+    # Handle preflight OPTIONS request for CORS
+    if event.get('httpMethod') == 'OPTIONS':
+        return {
+            'statusCode': 200,
+            'headers': headers,
+            'body': ''
+        }
+    
+    try:
+        body = json.loads(event['body'])
+        if 'message' not in body:
+            return {
+                'statusCode': 400,
+                'headers': headers,
+                'body': json.dumps({'error': 'Message is required'})
+            }
+        
+        # Extract user information from the JWT token in the request context
+        claims = event['requestContext']['authorizer']['claims']
+        username = claims.get('cognito:username', 'UnknownUser')  # Fallback to 'UnknownUser' if not found
+        display_name = claims.get('nickname') or claims.get('preferred_username') or 'Anonymous'  # Adjust based on your Cognito attribute settings
+        
+        # Create a unique MessageId using the current UTC timestamp in milliseconds
+        message_id = f"{int(datetime.utcnow().timestamp() * 1000)}"
+        
+        # Prepare the item to be stored in DynamoDB
+        item = {
+            'MessageId': message_id,
+            'Username': username,
+            'DisplayName': display_name,
+            'Message': body['message'],
+            'Timestamp': datetime.utcnow().isoformat() + 'Z'  # ISO format with UTC timezone
+        }
+        
+        # Store the message in DynamoDB
+        table.put_item(Item=item)
+        
+        # Return a successful response
+        return {
+            'statusCode': 200,
+            'headers': headers,
+            'body': json.dumps({'success': True, 'item': item})
+        }
+        
+    except Exception as e:
+        print('Error:', str(e))
+        return {
+            'statusCode': 500,
+            'headers': headers,
+            'body': json.dumps({'error': str(e)})
+        }
