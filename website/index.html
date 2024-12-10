@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chat Application</title>
+    <link rel="stylesheet" href="main.css">
+    <!-- Include DOMPurify without integrity attribute -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.1/purify.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+</head>
+<body>
+    <!-- Login Container -->
+    <div id="login-container" class="login-container">
+        <h2>Welcome to Chat</h2>
+        <div id="error-container" class="error-message" style="display: none;"></div>
+        <button id="sign-in-button">Sign in with Amazon Cognito</button>
+    </div>
+
+    <!-- Chat Container -->
+    <div id="chat-container" class="chat-container" style="display: none;">
+        <div class="chat-header">
+            <div class="user-info">
+                <!-- Removed Avatar Image -->
+                <span id="user-display">Chatroom</span>
+            </div>
+            <button id="sign-out-button" class="logout-button">Logout</button>
+        </div>
+
+        <div id="messages-container" class="messages-container">
+            <ul id="messages-list" class="messages-list">
+                <!-- Messages will be dynamically loaded here -->
+            </ul>
+        </div>
+
+        <div class="message-input-container">
+            <input type="text" id="message-input" placeholder="Type your message..." autocomplete="off">
+            <button id="send-message-button" class="send-button">Send</button>
+        </div>
+    </div>
+
+    <!-- Loading Indicator (Optional) -->
+    <div id="loading-indicator" class="loading-indicator" style="display: none;">
+        <div class="spinner"></div>
+        <span>Loading...</span>
+    </div>
+
+    <!-- Main JavaScript -->
+    <script src="main.js"></script>
+</body>
+</html>
