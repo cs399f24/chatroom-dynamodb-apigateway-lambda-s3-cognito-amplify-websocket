@@ -31,17 +31,11 @@ chatroom-infrastructure/
 ├── cloudformation/
 │   └── template.yaml       # CloudFormation infrastructure template
 ├── lambda/
-│   ├── token-exchange/    # Token exchange function implementation
-│   │   ├── index.js       # Main function code
-│   │   └── package.json   # Dependencies
+      # Main function code
 │   ├── get-messages/      # Message retrieval function
 │   │   └── index.py       # Message handling implementation
 │   ├── store-message/     # Message storage function
 │   │   └── index.py       # Storage implementation
-│   └── websocket/         # WebSocket connection handlers
-│       ├── connect.js     # Connection management
-│       ├── disconnect.js  # Disconnection handling
-│       └── message.js     # Message broadcasting
 ├── website/               # Static website files
 │   ├── index.html        # Main application page
 │   ├── css/              # Styling
