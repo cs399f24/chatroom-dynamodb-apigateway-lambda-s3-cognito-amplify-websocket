@@ -31,11 +31,8 @@ chatroom-infrastructure/
 ├── cloudformation/
 │   └── template.yaml       # CloudFormation infrastructure template
 ├── lambda/
-      # Main function code
-│   ├── get-messages/      # Message retrieval function
-│   │   └── index.py       # Message handling implementation
+│   ├── getChatMessages/      # Message retrieval function
 │   ├── store-message/     # Message storage function
-│   │   └── index.py       # Storage implementation
 ├── website/               # Static website files
 │   ├── index.html        # Main application page
 │   ├── css/              # Styling
