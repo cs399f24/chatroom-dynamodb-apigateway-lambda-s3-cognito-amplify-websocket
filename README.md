@@ -1,8 +1,5 @@
 # Serverless Chatroom Infrastructure
 
-## Architecture Overview
-![Architecture Diagram](ArchitectureDiagramv4.png)
-
 This repository provides a complete serverless chatroom application infrastructure using AWS services. It includes all necessary infrastructure-as-code templates and implementation code for immediate deployment. The architecture diagram above illustrates how the various AWS services interact to deliver a scalable, real-time chat solution.
 
 Our implementation leverages several AWS services:
@@ -11,6 +8,12 @@ Our implementation leverages several AWS services:
 - AWS Lambda functions process authentication and message handling
 - Amazon DynamoDB stores chat messages and connection information
 - Amazon S3 hosts the static website content
+
+# Architecture Diagram
+![Architecture Diagram](ArchitectureDiagramv4.png)
+
+# Architecture Flowchart
+![Architecture Diagram](chatroomArchitectureDiagramv3.gif)
 
 ## WebSocket Integration
 ![Web Socket API Documentation](WebSocketAPI.png)
